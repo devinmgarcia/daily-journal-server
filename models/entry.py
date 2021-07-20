@@ -5,7 +5,7 @@ class Entry():
     # needs as the first parameter.
     def __init__(self, id, concept, entry, date, mood_id):
         self.id = id
-        self.breed = concept
-        self.name = entry
-        self.status = date
-        self.location_id = mood_id
+        self.concept = concept
+        self.entry = entry
+        self.date = date
+        self.mood_id = mood_id

@@ -1,8 +1,8 @@
 import sqlite3
 import json
-from models import Entry
+from models import Mood
 
-def get_all_entries():
+def get_all_moods():
     # Open a connection to the database
     with sqlite3.connect("./dailyjournal.db") as conn:
 
@@ -14,15 +14,12 @@ def get_all_entries():
         db_cursor.execute("""
         SELECT
             a.id,
-            a.concept,
-            a.entry,
-            a.date,
-            a.mood_id
-        FROM entry a
+            a.label
+        FROM mood a
         """)
 
         # Initialize an empty list to hold all animal representations
-        entries = []
+        moods = []
 
         # Convert rows of data into a Python list
         dataset = db_cursor.fetchall()
@@ -34,15 +31,14 @@ def get_all_entries():
             # Note that the database fields are specified in
             # exact order of the parameters defined in the
             # Animal class above.
-            entry = Entry(row['id'], row['concept'], row['entry'],
-                            row['date'], row['mood_id'])
+            mood = Mood(row['id'], row['label'])
 
-            entries.append(entry.__dict__)
+            moods.append(mood.__dict__)
 
     # Use `json` package to properly serialize list as JSON
-    return json.dumps(entries)
+    return json.dumps(moods)
 
-def get_single_entry(id):
+def get_single_mood(id):
     with sqlite3.connect("./dailyjournal.db") as conn:
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
@@ -52,11 +48,8 @@ def get_single_entry(id):
         db_cursor.execute("""
         SELECT
             a.id,
-            a.concept,
-            a.entry,
-            a.date,
-            a.mood_id
-        FROM entry a
+            a.label
+        FROM mood a
         WHERE a.id = ?
         """, ( id, ))
 
@@ -64,40 +57,15 @@ def get_single_entry(id):
         data = db_cursor.fetchone()
 
         # Create an animal instance from the current row
-        entry = Entry(data['id'], data['concept'], data['entry'],
-                            data['date'], data['mood_id'])
+        mood = Mood(data['id'], data['label'])
 
-        return json.dumps(entry.__dict__)
+        return json.dumps(mood.__dict__)
 
-def delete_entry(id):
+def delete_mood(id):
     with sqlite3.connect("./dailyjournal.db") as conn:
         db_cursor = conn.cursor()
 
         db_cursor.execute("""
-        DELETE FROM entry
+        DELETE FROM mood
         WHERE id = ?
         """, (id, ))
-
-def find_entry_by_keyword(searchTerm):
-    with sqlite3.connect("./dailyjournal.db") as conn:
-        
-        conn.row_factory = sqlite3.Row
-        db_cursor = conn.cursor()
-        db_cursor.execute(f"""
-        SELECT
-            e.id,
-            e.concept,
-            e.entry,
-            e.date,
-            e.mood_id
-        FROM entry e
-        WHERE entry LIKE "%{searchTerm}%";
-        """)
-        entries = []
-        dataset = db_cursor.fetchall()
-
-        for row in dataset:
-            entry = Entry(row['id'], row['concept'], row['entry'], row['date'], row['mood_id'])
-            entries.append(entry.__dict__)
-    
-    return json.dumps(entries)

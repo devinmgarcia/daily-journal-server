@@ -20,4 +20,3 @@ INSERT INTO `Mood` VALUES (null, 'Ok');
 INSERT INTO `Entry` VALUES (null, 'SQL', 'I am learning SQL', '7/15/21', 4);
 INSERT INTO `Entry` VALUES (null, 'Python Classes', 'I am learning how to make classes in Python', '7/16/21', 1);
 
-

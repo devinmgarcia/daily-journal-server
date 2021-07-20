@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-from entries import get_all_entries, get_single_entry, delete_entry
+from entries import get_all_entries, get_single_entry, delete_entry, find_entry_by_keyword
+from moods import get_all_moods, get_single_mood
 
 
 # Here's a class. It inherits from another class.
@@ -22,17 +23,30 @@ class HandleRequests(BaseHTTPRequestHandler):
         resource = path_params[1]
         id = None
 
-        # Try to get the item at index 2
-        try:
-            # Convert the string "1" to the integer 1
-            # This is the new parseInt()
-            id = int(path_params[2])
-        except IndexError:
-            pass  # No route parameter exists: /animals
-        except ValueError:
-            pass  # Request had trailing slash: /animals/
+        if "?" in resource:
 
-        return (resource, id)  # This is a tuple
+            # /entries?q=${searchTerm}
+
+            param = resource.split("?")[1]  # q=searchTerm
+            resource = resource.split("?")[0]  # 'entries'
+            pair = param.split("=")  # [ 'q', 'searchTerm' ]
+            key = pair[0]  # 'q'
+            value = pair[1]  # 'searchTerm'
+
+            return ( resource, key, value )
+
+        else:
+            # Try to get the item at index 2
+            try:
+                # Convert the string "1" to the integer 1
+                # This is the new parseInt()
+                id = int(path_params[2])
+            except IndexError:
+                pass  # No route parameter exists: /animals
+            except ValueError:
+                pass  # Request had trailing slash: /animals/
+
+            return (resource, id)  # This is a tuple
 
     # Here's a class function
     def _set_headers(self, status):
@@ -65,17 +79,27 @@ class HandleRequests(BaseHTTPRequestHandler):
     def do_GET(self):
         self._set_headers(200)
         response = {}  # Default response
-
+        parsed_url = self.parse_url(self.path)
         # Parse the URL and capture the tuple that is returned
-        (resource, id) = self.parse_url(self.path)
-
-        if resource == "entries":
-            if id is not None:
-                response = f"{get_single_entry(id)}"
-                pass
-            else:
-                response = f"{get_all_entries()}"
-
+        if len(parsed_url) == 2:
+            (resource, id) = parsed_url
+            if resource == "entries":
+                if id is not None:
+                    response = f"{get_single_entry(id)}"
+                    pass
+                else:
+                    response = f"{get_all_entries()}"
+            elif resource == "moods":
+                if id is not None:
+                    response = f"{get_single_mood(id)}"
+                    pass
+                else:
+                    response = f"{get_all_moods()}"
+        elif len(parsed_url) == 3:
+            ( resource, key, value ) = parsed_url
+            if key == "q" and resource == "entries":
+                # pass in value to SQL database search
+                response = f"{find_entry_by_keyword(value)}"
 
         self.wfile.write(response.encode())
     # Here's a method on the class that overrides the parent's method.
