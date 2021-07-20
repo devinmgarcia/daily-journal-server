@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from models import Entry
+from models import Entry, Mood
 
 def get_all_entries():
     # Open a connection to the database
@@ -13,15 +13,18 @@ def get_all_entries():
         # Write the SQL query to get the information you want
         db_cursor.execute("""
         SELECT
-            a.id,
-            a.concept,
-            a.entry,
-            a.date,
-            a.mood_id
-        FROM entry a
+            e.id,
+            e.concept,
+            e.entry,
+            e.date,
+            e.mood_id,
+            m.label mood_label
+        FROM entry e
+        JOIN mood m
+            ON m.id = e.mood_id
         """)
 
-        # Initialize an empty list to hold all animal representations
+        # Initialize an empty list to hold all entry representations
         entries = []
 
         # Convert rows of data into a Python list
@@ -30,12 +33,15 @@ def get_all_entries():
         # Iterate list of data returned from database
         for row in dataset:
 
-            # Create an animal instance from the current row.
+            # Create an entry instance from the current row.
             # Note that the database fields are specified in
             # exact order of the parameters defined in the
-            # Animal class above.
+            # entry class above.
             entry = Entry(row['id'], row['concept'], row['entry'],
                             row['date'], row['mood_id'])
+            mood = Mood(row['id'],row['mood_label'])
+
+            entry.mood = mood.__dict__
 
             entries.append(entry.__dict__)
 
@@ -51,23 +57,53 @@ def get_single_entry(id):
         # into the SQL statement.
         db_cursor.execute("""
         SELECT
-            a.id,
-            a.concept,
-            a.entry,
-            a.date,
-            a.mood_id
-        FROM entry a
-        WHERE a.id = ?
+            e.id,
+            e.concept,
+            e.entry,
+            e.date,
+            e.mood_id,
+            m.label mood_label
+        FROM entry e
+        JOIN mood m
+            ON m.id = e.mood_id
+        WHERE e.id = ?
         """, ( id, ))
 
         # Load the single result into memory
         data = db_cursor.fetchone()
 
-        # Create an animal instance from the current row
+        # Create an entry instance from the current row
         entry = Entry(data['id'], data['concept'], data['entry'],
                             data['date'], data['mood_id'])
+        mood = Mood(data['id'],data['mood_label'])
+
+        entry.mood = mood.__dict__
 
         return json.dumps(entry.__dict__)
+
+def create_entry(new_entry):
+    with sqlite3.connect("./dailyjournal.db") as conn:
+        db_cursor = conn.cursor()
+
+        db_cursor.execute("""
+        INSERT INTO entry
+            ( concept, entry, date, mood_id )
+        VALUES
+            ( ?, ?, ?, ?);
+        """, (new_entry['concept'], new_entry['entry'],
+              new_entry['date'], new_entry['mood_id']))
+
+        # The `lastrowid` property on the cursor will return
+        # the primary key of the last thing that got added to
+        # the database.
+        id = db_cursor.lastrowid
+
+        # Add the `id` property to the entry dictionary that
+        # was sent by the client so that the client sees the
+        # primary key in the response.
+        new_entry['id'] = id
+
+    return json.dumps(new_entry)
 
 def delete_entry(id):
     with sqlite3.connect("./dailyjournal.db") as conn:

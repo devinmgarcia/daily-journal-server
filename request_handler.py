@@ -1,6 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-from entries import get_all_entries, get_single_entry, delete_entry, find_entry_by_keyword
+from entries import get_all_entries, get_single_entry, delete_entry, find_entry_by_keyword, create_entry
 from moods import get_all_moods, get_single_mood
 
 
@@ -104,48 +104,28 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.wfile.write(response.encode())
     # Here's a method on the class that overrides the parent's method.
     # It handles any POST request.
-    # def do_POST(self):
-    #     self._set_headers(201)
-    #     content_len = int(self.headers.get('content-length', 0))
-    #     post_body = self.rfile.read(content_len)
+    def do_POST(self):
+        self._set_headers(201)
+        content_len = int(self.headers.get('content-length', 0))
+        post_body = self.rfile.read(content_len)
 
-    #     # Convert JSON string to a Python dictionary
-    #     post_body = json.loads(post_body)
+        # Convert JSON string to a Python dictionary
+        post_body = json.loads(post_body)
 
-    #     # Parse the URL
-    #     (resource, id) = self.parse_url(self.path)
+        # Parse the URL
+        (resource, id) = self.parse_url(self.path)
 
-    #     # Initialize new animal
-    #     new_animal = None
+        # Initialize new animal
+        new_animal = None
 
-    #     # Initialize new location
-    #     new_location = None
+        # Add a new animal to the list. Don't worry about
+        # the orange squiggle, you'll define the create_animal
+        # function next.
+        if resource == "entries":
+            new_animal = create_entry(post_body)
+            # Encode the new animal and send in response
+            self.wfile.write(f"{new_animal}".encode())
 
-    #     # Initialize new location
-    #     new_customer = None
-
-    #     # Add a new animal to the list. Don't worry about
-    #     # the orange squiggle, you'll define the create_animal
-    #     # function next.
-    #     if resource == "animals":
-    #         new_animal = create_animal(post_body)
-    #         # Encode the new animal and send in response
-    #         self.wfile.write(f"{new_animal}".encode())
-
-    #     if resource == "locations":
-    #         new_location = create_location(post_body)
-    #         # Encode the new location and send in response
-    #         self.wfile.write(f"{new_location}".encode())
-
-    #     if resource == "customers":
-    #         new_customer = create_customer(post_body)
-    #         # Encode the new customer and send in response
-    #         self.wfile.write(f"{new_customer}".encode())
-
-    #     if resource == "employees":
-    #         new_employee = create_employee(post_body)
-    #         # Encode the new employee and send in response
-    #         self.wfile.write(f"{new_employee}".encode())
 
     # # Here's a method on the class that overrides the parent's method.
     # # It handles any PUT request.
